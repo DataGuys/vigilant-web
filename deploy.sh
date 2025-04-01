@@ -25,9 +25,9 @@ az acr create --resource-group "$resourceGroup" --name "$acrName" --sku Basic
 # Build the container image from GitHub and push it to ACR
 az acr build --registry "$acrName" --image vigilant-web:latest https://github.com/DataGuys/vigilant-web.git
 
-# Retrieve ACR credentials
-username=$(az acr credential show --name "$acrName" --query "username" -o tsv)
-password=$(az acr credential show --name "$acrName" --query "passwords[0].value" -o tsv)
+# Retrieve ACR credentials using an explicit API version
+username=$(az acr credential show --name "$acrName" --query "username" -o tsv --api-version 2023-07-01)
+password=$(az acr credential show --name "$acrName" --query "passwords[0].value" -o tsv --api-version 2023-07-01)
 
 # Deploy the container image to an Azure Container Instance with registry credentials
 az container create \
