@@ -6,12 +6,11 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
-// InitDB opens the BadgerDB with an encryption key.
+// InitDB opens BadgerDB with the provided encryption key.
 func InitDB(dbPath string, encryptionKey []byte) (*badger.DB, error) {
 	opts := badger.DefaultOptions(dbPath).
 		WithEncryptionKey(encryptionKey).
-		WithLogger(nil) // Disable Badger logging for production
-
+		WithLogger(nil) // Disable logging for production
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
