@@ -11,12 +11,16 @@ import (
 	"vigilant-onion/internal/crawler"
 	"vigilant-onion/internal/database"
 	"vigilant-onion/internal/darkweb"
+	"vigilant-onion/internal/gist"
+	"vigilant-onion/internal/news"
+	"vigilant-onion/internal/pastebin"
+	"vigilant-onion/internal/reddit"
+	"vigilant-onion/internal/torch"
 	"vigilant-onion/internal/tor"
 )
 
 func main() {
 	// Generate or load your 32-byte encryption key.
-	// For production, use a secure key management process.
 	encryptionKey := make([]byte, 32)
 	_, err := rand.Read(encryptionKey)
 	if err != nil {
@@ -43,20 +47,24 @@ func main() {
 
 	// Set up HTTP routes
 	mux := http.NewServeMux()
-
-	// /monitor endpoint to trigger darkweb monitoring/discovery
 	mux.HandleFunc("/monitor", func(w http.ResponseWriter, r *http.Request) {
-		// Start darkweb discovery using the crawler and darkweb module
 		seedURL := "http://example.onion"
-		err := darkweb.Discover(seedURL, c, db)
-		if err != nil {
-			http.Error(w, "Monitoring failed: "+err.Error(), http.StatusInternalServerError)
+		// Trigger darkweb discovery
+		if err := darkweb.Discover(seedURL, c, db); err != nil {
+			http.Error(w, "Darkweb discovery failed: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write([]byte("Darkweb monitoring executed successfully."))
+		// Call additional engine modules
+		news.FetchSecurityNews()
+		gist.ProcessGists()
+		pastebin.MonitorPastebin()
+		reddit.FetchRedditData()
+		torch.ProcessTorchData()
+
+		w.Write([]byte("Darkweb monitoring and external engine processes executed successfully."))
 	})
 
-	// Configure HTTPS server (data in transit encrypted)
+	// Configure HTTPS server (ensuring data in transit is encrypted)
 	server := &http.Server{
 		Addr:         ":443",
 		Handler:      mux,
@@ -68,7 +76,7 @@ func main() {
 	}
 
 	log.Println("Starting HTTPS server on :443")
-	// Replace with paths to your certificate and private key
+	// Replace with your certificate and key file paths
 	if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
