@@ -1,2 +1,0 @@
-Flask==2.2.2
-# (Include any other dependencies required by observer.py and your project)
