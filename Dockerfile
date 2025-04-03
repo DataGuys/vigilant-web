@@ -1,14 +1,23 @@
-# Stage 1: Build the Go application
-FROM golang:1.18 AS builder
-WORKDIR /app
-COPY . .
-RUN go mod download
-RUN go build -o vigilant-onion ./cmd/main.go
+FROM golang:1.20 as builder
 
-# Stage 2: Create a minimal image with the compiled binary
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/vigilant-onion .
-EXPOSE 443
-CMD ["./vigilant-onion"]
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+
+RUN go build -o vigilant-web ./cmd/main.go
+
+# final stage
+FROM alpine:3.17
+WORKDIR /app
+
+# If you need CA certs for crawling, install them
+RUN apk --no-cache add ca-certificates && update-ca-certificates
+
+COPY --from=builder /app/vigilant-web /usr/local/bin/vigilant-web
+COPY web/ /app/web/
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/vigilant-web"]
